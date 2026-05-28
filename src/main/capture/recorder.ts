@@ -5,10 +5,13 @@ import { snapshotPath, snapshotFilename } from '../store/paths'
 import {
   createLecture,
   finalizeLecture,
-  insertSnapshot
+  insertSnapshot,
+  insertSegment,
+  getSettings
 } from '../store/lectures'
 import { IPC } from '@shared/ipc-contract'
 import type { RecordingConfig, Snapshot } from '@shared/types'
+import { chunker } from '../transcribe/chunker'
 import fs from 'fs'
 
 export interface ActiveSession {
@@ -36,12 +39,18 @@ export function startSession(win: BrowserWindow, config: RecordingConfig): Activ
   wavWriter = new WavWriter()
   wavWriter.open(id)
 
-  // Register manual snapshot hotkey
+  const settings = getSettings()
+  chunker.start(id, settings.whisperModel)
+
+  chunker.on('segment', (seg) => {
+    insertSegment(seg)
+    win.webContents.send(IPC.TRANSCRIPT_APPENDED, seg)
+  })
+
   globalShortcut.register('CommandOrControl+Shift+S', () => {
     captureSnapshot(win, id, 'manual')
   })
 
-  // Interval mode
   if (config.snapshotMode === 'interval' || config.snapshotMode === 'all') {
     intervalTimer = setInterval(() => {
       captureSnapshot(win, id, 'interval')
@@ -64,6 +73,9 @@ export function stopSession(win: BrowserWindow): void {
   wavWriter?.close()
   wavWriter = null
 
+  chunker.stop()
+  chunker.removeAllListeners('segment')
+
   const durationMs = Date.now() - session.startedAt
   finalizeLecture(session.lectureId, durationMs)
 
@@ -74,6 +86,7 @@ export function stopSession(win: BrowserWindow): void {
 
 export function receiveAudioChunk(int16Buffer: Buffer): void {
   wavWriter?.write(int16Buffer)
+  chunker.push(int16Buffer)
 }
 
 export function captureSnapshot(
@@ -82,10 +95,7 @@ export function captureSnapshot(
   trigger: 'auto' | 'interval' | 'manual'
 ): void {
   if (!session || session.lectureId !== lectureId) return
-
   const tMs = Date.now() - session.startedAt
-
-  // Ask renderer to send us the current frame
   win.webContents.send('snapshot:request-frame', { lectureId, tMs, trigger })
 }
 
@@ -101,14 +111,7 @@ export function saveSnapshotFrame(
   const data = Buffer.from(pngBase64, 'base64')
   fs.writeFileSync(filePath, data)
 
-  const snap: Snapshot = {
-    lectureId,
-    tMs,
-    filename,
-    trigger,
-    phash: null
-  }
+  const snap: Snapshot = { lectureId, tMs, filename, trigger, phash: null }
   insertSnapshot(snap)
-
   win.webContents.send(IPC.SNAPSHOT_ADDED, snap)
 }

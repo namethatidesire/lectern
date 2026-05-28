@@ -24,7 +24,13 @@ import {
 import { exportMarkdown } from './export/markdown'
 import { generateWithClaude } from './summarize/claude'
 import { generateWithOllama } from './summarize/ollama'
-import { snapshotPath } from './store/paths'
+import {
+  isBinReady,
+  isModelReady,
+  downloadBinary,
+  downloadModel
+} from './transcribe/downloader'
+import { snapshotPath, audioPath } from './store/paths'
 import fs from 'fs'
 
 const RecordingConfigSchema = z.object({
@@ -115,6 +121,31 @@ export function registerIpcHandlers(win: BrowserWindow): void {
   ipcMain.handle(IPC.OPEN_LECTURE_FOLDER, async (_e, { lectureId }) => {
     const folderPath = getLectureFolderPath(lectureId)
     shell.openPath(folderPath)
+  })
+
+  ipcMain.handle(IPC.WHISPER_STATUS, async () => {
+    const settings = getSettings()
+    return {
+      binReady: isBinReady(),
+      modelReady: isModelReady(settings.whisperModel),
+      modelName: settings.whisperModel
+    }
+  })
+
+  ipcMain.handle(IPC.DOWNLOAD_WHISPER, async (_e, { what }: { what: 'bin' | 'model' }) => {
+    const settings = getSettings()
+    const sendProgress = (pct: number): void =>
+      win.webContents.send(IPC.WHISPER_DOWNLOAD_PROGRESS, { what, pct })
+    if (what === 'bin') {
+      await downloadBinary(sendProgress)
+    } else {
+      await downloadModel(settings.whisperModel, sendProgress)
+    }
+  })
+
+  ipcMain.handle(IPC.GET_AUDIO_PATH, async (_e, { lectureId }) => {
+    const p = audioPath(lectureId)
+    return fs.existsSync(p) ? `file:///${p.replace(/\\/g, '/')}` : null
   })
 
   ipcMain.handle(

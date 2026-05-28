@@ -7,7 +7,8 @@ import type {
   Snapshot,
   Note,
   ScreenSource,
-  AppSettings
+  AppSettings,
+  WhisperStatus
 } from '@shared/types'
 
 const api = {
@@ -67,6 +68,20 @@ const api = {
     defaultPath?: string
     filters?: { name: string; extensions: string[] }[]
   }): Promise<string | null> => ipcRenderer.invoke(IPC.SHOW_SAVE_DIALOG, options),
+
+  getWhisperStatus: (): Promise<WhisperStatus> =>
+    ipcRenderer.invoke(IPC.WHISPER_STATUS),
+
+  downloadWhisper: (what: 'bin' | 'model'): Promise<void> =>
+    ipcRenderer.invoke(IPC.DOWNLOAD_WHISPER, { what }),
+
+  getAudioPath: (lectureId: string): Promise<string | null> =>
+    ipcRenderer.invoke(IPC.GET_AUDIO_PATH, { lectureId }),
+
+  onWhisperDownloadProgress: (cb: (data: { what: 'bin' | 'model'; pct: number }) => void) => {
+    ipcRenderer.on(IPC.WHISPER_DOWNLOAD_PROGRESS, (_e, data) => cb(data))
+    return () => ipcRenderer.removeAllListeners(IPC.WHISPER_DOWNLOAD_PROGRESS)
+  },
 
   // Renderer → Main streaming (fire-and-forget)
   sendAudioChunk: (buffer: Buffer): void =>

@@ -13,6 +13,7 @@ export default function LecturePage(): JSX.Element {
   const { view, setView } = useAppStore()
   const audioRef = useRef<HTMLAudioElement>(null)
   const [showNoteOptions, setShowNoteOptions] = useState(false)
+  const [audioSrc, setAudioSrc] = useState<string | null>(null)
 
   useEffect(() => {
     if (!id) return
@@ -20,8 +21,9 @@ export default function LecturePage(): JSX.Element {
       window.api.getLecture(id),
       window.api.getSegments(id),
       window.api.getSnapshots(id),
-      window.api.getNotes(id)
-    ]).then(([lecture, segments, snapshots, notes]) => {
+      window.api.getNotes(id),
+      window.api.getAudioPath(id)
+    ]).then(([lecture, segments, snapshots, notes, audioPath]) => {
       setView({
         lecture: lecture as Lecture,
         segments: segments as TranscriptSegment[],
@@ -30,8 +32,15 @@ export default function LecturePage(): JSX.Element {
         selectedSnapshotTMs: (snapshots as Snapshot[])[0]?.tMs ?? null,
         isGeneratingNotes: false
       })
+      setAudioSrc(audioPath)
     })
   }, [id])
+
+  useEffect(() => {
+    if (audioRef.current && audioSrc) {
+      audioRef.current.src = audioSrc
+    }
+  }, [audioSrc])
 
   async function handleExport(): Promise<void> {
     const filePath = await window.api.showSaveDialog({
@@ -50,7 +59,8 @@ export default function LecturePage(): JSX.Element {
       await window.api.generateNotes(id, model)
       const notes = await window.api.getNotes(id)
       setView({ notes: notes as Note[], isGeneratingNotes: false })
-    } catch {
+    } catch (err) {
+      alert(`Failed to generate notes: ${(err as Error).message}`)
       setView({ isGeneratingNotes: false })
     }
   }
@@ -86,6 +96,7 @@ export default function LecturePage(): JSX.Element {
           <button
             onClick={() => window.api.openLectureFolder(lecture.id)}
             className="p-2 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-white"
+            title="Open folder"
           >
             <FolderOpen className="w-4 h-4" />
           </button>
@@ -137,13 +148,28 @@ export default function LecturePage(): JSX.Element {
         />
       </div>
 
-      {/* Main content: transcript + notes */}
+      {/* Audio player */}
+      {audioSrc && (
+        <div className="px-6 py-2 border-b border-gray-800">
+          <audio
+            ref={audioRef}
+            src={audioSrc}
+            controls
+            className="w-full h-8"
+          />
+        </div>
+      )}
+
+      {/* Transcript + Notes */}
       <div className="flex-1 flex overflow-hidden">
         <div className="w-1/2 border-r border-gray-800 overflow-hidden flex flex-col">
-          <div className="px-4 py-2 border-b border-gray-800">
+          <div className="px-4 py-2 border-b border-gray-800 flex items-center gap-2">
             <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
               Transcript
             </h2>
+            {segments.length > 0 && (
+              <span className="text-xs text-gray-600">{segments.length} segments</span>
+            )}
           </div>
           <div className="flex-1 overflow-hidden">
             <TranscriptPane
@@ -167,9 +193,6 @@ export default function LecturePage(): JSX.Element {
           </div>
         </div>
       </div>
-
-      {/* Audio player */}
-      <audio ref={audioRef} controls className="hidden" />
     </div>
   )
 }

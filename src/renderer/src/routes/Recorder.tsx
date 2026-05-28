@@ -6,6 +6,7 @@ import { AudioCapture } from '../lib/audio-capture'
 import { ScreenCapture } from '../lib/screen-capture'
 import { setActiveCapture } from '../lib/screen-capture-manager'
 import LevelMeter from '../components/LevelMeter'
+import WhisperSetup from '../components/WhisperSetup'
 import { useAppStore } from '../state/store'
 
 export default function RecorderPage(): JSX.Element {
@@ -117,6 +118,9 @@ export default function RecorderPage(): JSX.Element {
       </div>
 
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        {/* Whisper setup banner */}
+        <WhisperSetup />
+
         {/* Title */}
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-1">Lecture Title</label>

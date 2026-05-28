@@ -96,6 +96,12 @@ export interface GenerateNotesArgs {
   ollamaModel?: string
 }
 
+export interface WhisperStatus {
+  binReady: boolean
+  modelReady: boolean
+  modelName: string
+}
+
 export interface AppSettings {
   claudeApiKey: string
   ollamaEndpoint: string

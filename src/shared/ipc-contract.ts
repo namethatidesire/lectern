@@ -19,6 +19,9 @@ export const IPC = {
   OPEN_LECTURE_FOLDER: 'store:open-folder',
 
   SHOW_SAVE_DIALOG: 'dialog:show-save',
+  WHISPER_STATUS: 'whisper:status',
+  DOWNLOAD_WHISPER: 'whisper:download',
+  GET_AUDIO_PATH: 'store:get-audio-path',
 
   // Main → Renderer (on)
   SNAPSHOT_ADDED: 'snapshot:added',
@@ -26,6 +29,7 @@ export const IPC = {
   RECORDING_STOPPED: 'recording:stopped',
   NOTE_GENERATED: 'note:generated',
   AUDIO_LEVEL: 'audio:level',
+  WHISPER_DOWNLOAD_PROGRESS: 'whisper:download-progress',
 } as const
 
 export type IpcChannel = (typeof IPC)[keyof typeof IPC]
