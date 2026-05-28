@@ -178,6 +178,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   claudeApiKey: '',
   ollamaEndpoint: 'http://localhost:11434',
   ollamaModel: 'llama3.1',
+  openrouterApiKey: '',
+  openrouterModel: 'anthropic/claude-3.5-haiku',
   defaultAudioSource: 'mic',
   defaultSnapshotMode: 'manual',
   intervalMs: 30000,

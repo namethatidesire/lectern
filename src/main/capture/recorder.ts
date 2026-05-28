@@ -48,14 +48,18 @@ export function startSession(win: BrowserWindow, config: RecordingConfig): Activ
     win.webContents.send(IPC.TRANSCRIPT_APPENDED, seg)
   })
 
-  globalShortcut.register('CommandOrControl+Shift+S', () => {
-    captureSnapshot(win, id, 'manual')
-  })
+  const hasVisual = config.sourceId !== null || config.cameraDeviceId !== null
 
-  if (config.snapshotMode === 'interval' || config.snapshotMode === 'all') {
-    intervalTimer = setInterval(() => {
-      captureSnapshot(win, id, 'interval')
-    }, config.intervalMs || 30000)
+  if (hasVisual) {
+    globalShortcut.register('CommandOrControl+Shift+S', () => {
+      captureSnapshot(win, id, 'manual')
+    })
+
+    if (config.snapshotMode === 'interval' || config.snapshotMode === 'all') {
+      intervalTimer = setInterval(() => {
+        captureSnapshot(win, id, 'interval')
+      }, config.intervalMs || 30000)
+    }
   }
 
   return session
@@ -64,7 +68,9 @@ export function startSession(win: BrowserWindow, config: RecordingConfig): Activ
 export function stopSession(win: BrowserWindow): void {
   if (!session) return
 
-  globalShortcut.unregister('CommandOrControl+Shift+S')
+  if (session.config.sourceId !== null || session.config.cameraDeviceId !== null) {
+    globalShortcut.unregister('CommandOrControl+Shift+S')
+  }
 
   if (intervalTimer) {
     clearInterval(intervalTimer)

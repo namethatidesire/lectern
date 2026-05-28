@@ -8,7 +8,8 @@ A desktop app for taking notes during lectures. Records your screen and audio, t
 - **Screen capture**: pick any monitor or window as the source
 - **Snapshots**: manual hotkey (`Ctrl+Shift+S`), fixed interval, or automatic slide-change detection
 - **Local transcription**: runs Whisper entirely on your machine, no data sent anywhere
-- **AI notes**: per-slide bullet points and key terms via Claude API or a local Ollama model
+- **Visual source**: screen or window capture, webcam, or audio-only (no visual capture)
+- **AI notes**: per-slide bullet points and key terms via Claude API, OpenRouter, or a local Ollama model
 - **Markdown export**: full lecture notes with embedded slide images
 - **Library search**: full-text search across all lecture transcripts
 
@@ -91,4 +92,4 @@ All lecture data lives under the Electron `userData` path:
 | 2: Transcription + timeline | Done | Whisper subprocess (pre-built binary, first-run download), 30s live chunker, timeline view, audio playback with click-to-seek |
 | 3: Snapshot intelligence + loopback | Done | WASAPI system audio loopback via Electron desktopCapturer, mic+loopback Web Audio mixer, dHash auto slide-change detection (1s poll, Hamming distance threshold), phash deduplication |
 | 4: Summarization + export | Done | Claude/Ollama note generation (beta prompt caching), Markdown export with embedded images, FTS5 transcript search with highlighted snippets |
-| 5: In-person lecture support | Pending | Webcam as visual capture source, audio-only mode (no visual capture required) |
+| 5: In-person lecture support | Done | Webcam as visual capture source, audio-only mode (transcript-only recording), OpenRouter as a third summarization provider |

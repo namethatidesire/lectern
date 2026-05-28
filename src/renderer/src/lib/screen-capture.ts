@@ -6,8 +6,8 @@ export class ScreenCapture {
   private canvas: OffscreenCanvas | null = null
   private ctx: OffscreenCanvasRenderingContext2D | null = null
 
-  async start(sourceId: string): Promise<void> {
-    const constraints = {
+  async startDesktop(sourceId: string): Promise<void> {
+    this.stream = await navigator.mediaDevices.getUserMedia({
       audio: false,
       video: {
         mandatory: {
@@ -18,9 +18,19 @@ export class ScreenCapture {
           maxFrameRate: 5
         }
       }
-    } as MediaStreamConstraints
+    } as MediaStreamConstraints)
+    await this.initVideo()
+  }
 
-    this.stream = await navigator.mediaDevices.getUserMedia(constraints)
+  async startCamera(deviceId: string): Promise<void> {
+    this.stream = await navigator.mediaDevices.getUserMedia({
+      audio: false,
+      video: { deviceId: { exact: deviceId }, width: { ideal: 1280 }, height: { ideal: 720 } }
+    })
+    await this.initVideo()
+  }
+
+  private async initVideo(): Promise<void> {
     this.videoEl = document.createElement('video')
     this.videoEl.srcObject = this.stream
     this.videoEl.muted = true

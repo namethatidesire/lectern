@@ -25,6 +25,7 @@ import {
 import { exportMarkdown } from './export/markdown'
 import { generateWithClaude } from './summarize/claude'
 import { generateWithOllama } from './summarize/ollama'
+import { generateWithOpenRouter } from './summarize/openrouter'
 import {
   isBinReady,
   isModelReady,
@@ -39,7 +40,8 @@ const RecordingConfigSchema = z.object({
   audioSource: z.enum(['mic', 'loopback', 'mixed']),
   snapshotMode: z.enum(['auto', 'interval', 'manual', 'all']),
   intervalMs: z.number().positive().default(30000),
-  sourceId: z.string().nullable()
+  sourceId: z.string().nullable(),
+  cameraDeviceId: z.string().nullable().default(null)
 })
 
 export function registerIpcHandlers(win: BrowserWindow): void {
@@ -176,6 +178,9 @@ export function registerIpcHandlers(win: BrowserWindow): void {
     if (model === 'claude') {
       if (!settings.claudeApiKey) throw new Error('Claude API key not set in Settings.')
       await generateWithClaude(lectureId, settings.claudeApiKey)
+    } else if (model === 'openrouter') {
+      if (!settings.openrouterApiKey) throw new Error('OpenRouter API key not set in Settings.')
+      await generateWithOpenRouter(lectureId, settings.openrouterApiKey, settings.openrouterModel)
     } else {
       await generateWithOllama(
         lectureId,

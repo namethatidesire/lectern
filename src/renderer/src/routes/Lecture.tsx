@@ -51,7 +51,7 @@ export default function LecturePage(): JSX.Element {
     await window.api.exportMarkdown(id, filePath)
   }
 
-  async function handleGenerateNotes(model: 'claude' | 'ollama'): Promise<void> {
+  async function handleGenerateNotes(model: 'claude' | 'ollama' | 'openrouter'): Promise<void> {
     if (!id) return
     setView({ isGeneratingNotes: true })
     setShowNoteOptions(false)
@@ -119,9 +119,15 @@ export default function LecturePage(): JSX.Element {
                 </button>
                 <button
                   onClick={() => handleGenerateNotes('ollama')}
-                  className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-700 rounded-b-lg border-t border-gray-700"
+                  className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-700 border-t border-gray-700"
                 >
                   Local (Ollama)
+                </button>
+                <button
+                  onClick={() => handleGenerateNotes('openrouter')}
+                  className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-700 rounded-b-lg border-t border-gray-700"
+                >
+                  OpenRouter
                 </button>
               </div>
             )}

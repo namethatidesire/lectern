@@ -51,7 +51,7 @@ const api = {
 
   generateNotes: (
     lectureId: string,
-    model: 'claude' | 'ollama',
+    model: 'claude' | 'ollama' | 'openrouter',
     ollamaModel?: string
   ): Promise<void> =>
     ipcRenderer.invoke(IPC.GENERATE_NOTES, { lectureId, model, ollamaModel }),

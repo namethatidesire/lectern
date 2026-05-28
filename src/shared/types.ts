@@ -3,7 +3,15 @@ export type SnapshotTrigger = 'auto' | 'interval' | 'manual'
 export type SnapshotMode = 'auto' | 'interval' | 'manual' | 'all'
 export type LectureStatus = 'recording' | 'transcribing' | 'ready' | 'failed'
 export type NoteKind = 'summary' | 'bullets' | 'keyterms' | 'qa'
-export type SummarizeModel = 'claude' | 'ollama'
+export type SummarizeModel = 'claude' | 'ollama' | 'openrouter'
+
+// Discriminated union for the visual capture source selected in the Recorder.
+// The renderer uses this to start the correct capture; main only needs to know
+// whether visual capture is active at all (for snapshot scheduling).
+export type VisualSource =
+  | { kind: 'desktop'; sourceId: string; name: string; thumbnailDataUrl: string }
+  | { kind: 'camera'; deviceId: string; label: string }
+  | { kind: 'none' }
 
 export interface Lecture {
   id: string
@@ -43,7 +51,10 @@ export interface RecordingConfig {
   audioSource: AudioSource
   snapshotMode: SnapshotMode
   intervalMs: number
+  // null when visual capture is disabled (audio-only)
   sourceId: string | null
+  // non-null when a camera device was selected instead of a screen source
+  cameraDeviceId: string | null
 }
 
 export interface AudioDevice {
@@ -58,42 +69,15 @@ export interface ScreenSource {
   thumbnailDataUrl: string
 }
 
+export interface CameraDevice {
+  deviceId: string
+  label: string
+}
+
 export interface RecordingState {
   lectureId: string
   startedAt: number
   isPaused: boolean
-}
-
-// IPC message payloads
-export interface StartRecordingArgs {
-  config: RecordingConfig
-}
-
-export interface StopRecordingArgs {
-  lectureId: string
-}
-
-export interface TakeSnapshotArgs {
-  lectureId: string
-}
-
-export interface GetLectureArgs {
-  lectureId: string
-}
-
-export interface DeleteLectureArgs {
-  lectureId: string
-}
-
-export interface ExportMarkdownArgs {
-  lectureId: string
-  outputPath: string
-}
-
-export interface GenerateNotesArgs {
-  lectureId: string
-  model: SummarizeModel
-  ollamaModel?: string
 }
 
 export interface SearchResult {
@@ -113,6 +97,8 @@ export interface AppSettings {
   claudeApiKey: string
   ollamaEndpoint: string
   ollamaModel: string
+  openrouterApiKey: string
+  openrouterModel: string
   defaultAudioSource: AudioSource
   defaultSnapshotMode: SnapshotMode
   intervalMs: number
