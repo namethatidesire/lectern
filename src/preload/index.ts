@@ -8,7 +8,8 @@ import type {
   Note,
   ScreenSource,
   AppSettings,
-  WhisperStatus
+  WhisperStatus,
+  SearchResult
 } from '@shared/types'
 
 const api = {
@@ -68,6 +69,9 @@ const api = {
     defaultPath?: string
     filters?: { name: string; extensions: string[] }[]
   }): Promise<string | null> => ipcRenderer.invoke(IPC.SHOW_SAVE_DIALOG, options),
+
+  search: (query: string): Promise<SearchResult[]> =>
+    ipcRenderer.invoke(IPC.SEARCH, { query }),
 
   getWhisperStatus: (): Promise<WhisperStatus> =>
     ipcRenderer.invoke(IPC.WHISPER_STATUS),

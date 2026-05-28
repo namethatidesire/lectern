@@ -19,6 +19,7 @@ export const IPC = {
   OPEN_LECTURE_FOLDER: 'store:open-folder',
 
   SHOW_SAVE_DIALOG: 'dialog:show-save',
+  SEARCH: 'store:search',
   WHISPER_STATUS: 'whisper:status',
   DOWNLOAD_WHISPER: 'whisper:download',
   GET_AUDIO_PATH: 'store:get-audio-path',

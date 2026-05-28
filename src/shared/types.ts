@@ -96,6 +96,13 @@ export interface GenerateNotesArgs {
   ollamaModel?: string
 }
 
+export interface SearchResult {
+  lectureId: string
+  title: string
+  startedAt: number
+  snippet: string
+}
+
 export interface WhisperStatus {
   binReady: boolean
   modelReady: boolean

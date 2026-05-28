@@ -19,7 +19,8 @@ import {
   getNotes,
   getSettings,
   setSettings,
-  getLectureFolderPath
+  getLectureFolderPath,
+  searchTranscripts
 } from './store/lectures'
 import { exportMarkdown } from './export/markdown'
 import { generateWithClaude } from './summarize/claude'
@@ -102,6 +103,10 @@ export function registerIpcHandlers(win: BrowserWindow): void {
   })
 
   ipcMain.handle(IPC.LIST_LECTURES, async () => listLectures())
+
+  ipcMain.handle(IPC.SEARCH, async (_e, { query }: { query: string }) =>
+    searchTranscripts(query)
+  )
 
   ipcMain.handle(IPC.GET_LECTURE, async (_e, { lectureId }) => getLecture(lectureId))
 

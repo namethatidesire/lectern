@@ -4,18 +4,19 @@ A desktop app for taking notes during lectures. Records your screen and audio, t
 
 ## Features
 
-- **Audio capture** — microphone or system audio (loopback)
-- **Screen capture** — pick any monitor or window as the source
-- **Snapshots** — manual hotkey (`Ctrl+Shift+S`), fixed interval, or automatic slide-change detection
-- **Local transcription** — runs Whisper entirely on your machine, no data sent anywhere
-- **AI notes** — per-slide bullet points and key terms via Claude API or a local Ollama model
-- **Markdown export** — full lecture notes with embedded slide images
+- **Audio capture**: microphone or system audio (loopback)
+- **Screen capture**: pick any monitor or window as the source
+- **Snapshots**: manual hotkey (`Ctrl+Shift+S`), fixed interval, or automatic slide-change detection
+- **Local transcription**: runs Whisper entirely on your machine, no data sent anywhere
+- **AI notes**: per-slide bullet points and key terms via Claude API or a local Ollama model
+- **Markdown export**: full lecture notes with embedded slide images
+- **Library search**: full-text search across all lecture transcripts
 
 ## Requirements
 
 - Windows 10/11 x64
 - Node.js 20+ and pnpm
-- MSVC build tools (for native SQLite module) — Visual Studio with "Desktop development with C++" workload
+- MSVC build tools (for native SQLite module): Visual Studio with the "Desktop development with C++" workload
 - Python 3.x (for node-gyp)
 
 ## Setup
@@ -27,8 +28,8 @@ pnpm build                # compile to out/
 ```
 
 On first launch the app downloads:
-- `whisper.cpp` Windows binary (~8 MB) into `resources/whisper-models/`
-- The selected Whisper model (default: `ggml-small.en`, ~466 MB) into the same directory
+- `whisper.cpp` Windows binary (~8 MB) stored under `userData/lectern/whisper/`
+- The selected Whisper model (default: `ggml-small.en`, ~466 MB) stored in the same directory
 
 ## Development
 
@@ -49,23 +50,23 @@ node scripts/drive.mjs        # interactive Playwright REPL for manual UI drivin
 
 ```
 Renderer (React + Zustand)
-  ├── Library    — past lectures
-  ├── Recorder   — start/stop, source picker
-  ├── Lecture    — timeline, transcript, notes
-  └── Settings   — API keys, model selection
+  ├── Library    : past lectures + transcript search
+  ├── Recorder   : start/stop, source picker
+  ├── Lecture    : timeline, transcript, notes
+  └── Settings   : API keys, model selection
 
 Main process (Node)
-  ├── capture/   — WAV writer, screen source lister
-  ├── transcribe/— Whisper subprocess wrapper, 30s chunker
-  ├── snapshot/  — interval + hotkey triggers
-  ├── summarize/ — Claude API (beta prompt caching) + Ollama
-  ├── store/     — better-sqlite3 (lectures, segments, snapshots, notes)
-  └── export/    — Markdown renderer
+  ├── capture/   : WAV writer, screen source lister
+  ├── transcribe/: Whisper subprocess wrapper, 30s chunker
+  ├── snapshot/  : interval + hotkey + auto-detect triggers, phash dedup
+  ├── summarize/ : Claude API (beta prompt caching) + Ollama
+  ├── store/     : better-sqlite3 (lectures, segments, snapshots, notes, FTS)
+  └── export/    : Markdown renderer
 
 IPC bridge (contextBridge / zod-validated)
 ```
 
-Audio capture runs in the renderer via Web Audio API; PCM is streamed to the main process where it is written as a WAV file and fed to the Whisper chunker in parallel.
+Audio capture runs in the renderer via Web Audio API. PCM is streamed to the main process where it is written as a WAV file and fed to the Whisper chunker in parallel.
 
 ## Data storage
 
@@ -73,19 +74,21 @@ All lecture data lives under the Electron `userData` path:
 
 ```
 %APPDATA%\Roaming\Electron\lectern\
-├── lectern.db          — SQLite (metadata, transcripts, notes)
+├── lectern.db              SQLite (metadata, transcripts, notes, FTS index)
+├── whisper\                whisper.cpp binary and model files
 └── lectures\
     └── <ULID>\
         ├── audio.wav
         ├── snapshots\*.png
-        └── export.md   (written on export)
+        └── export.md       written on export
 ```
 
 ## Build phases
 
 | Phase | Status | Description |
 |-------|--------|-------------|
-| 1 — Skeleton + capture | ✅ Done | Electron scaffold, SQLite store, mic audio → WAV, screen capture, snapshot hotkey, Recorder UI, Library UI |
-| 2 — Transcription + timeline | ✅ Done | Whisper subprocess (pre-built binary, first-run download), 30s live chunker, timeline view, audio playback with click-to-seek |
-| 3 — Snapshot intelligence + loopback | ✅ Done | WASAPI system audio loopback via Electron desktopCapturer, mic+loopback Web Audio mixer, dHash auto slide-change detection (1s poll, Hamming distance threshold), phash deduplication discards duplicate slides |
-| 4 — Summarization + export | ⬜ Pending | Claude/Ollama note generation, Markdown export, FTS search |
+| 1: Skeleton + capture | Done | Electron scaffold, SQLite store, mic audio to WAV, screen capture, snapshot hotkey, Recorder UI, Library UI |
+| 2: Transcription + timeline | Done | Whisper subprocess (pre-built binary, first-run download), 30s live chunker, timeline view, audio playback with click-to-seek |
+| 3: Snapshot intelligence + loopback | Done | WASAPI system audio loopback via Electron desktopCapturer, mic+loopback Web Audio mixer, dHash auto slide-change detection (1s poll, Hamming distance threshold), phash deduplication |
+| 4: Summarization + export | Done | Claude/Ollama note generation (beta prompt caching), Markdown export with embedded images, FTS5 transcript search with highlighted snippets |
+| 5: In-person lecture support | Pending | Webcam as visual capture source, audio-only mode (no visual capture required) |

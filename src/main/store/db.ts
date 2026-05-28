@@ -27,9 +27,7 @@ function migrate(db: Database.Database): void {
   )
 
   const migrations: [number, string][] = [
-    [
-      1,
-      `
+    [1, `
       CREATE TABLE lectures (
         id            TEXT PRIMARY KEY,
         title         TEXT NOT NULL,
@@ -76,7 +74,21 @@ function migrate(db: Database.Database): void {
         content_rowid='rowid'
       );
       `
-    ]
+    ],
+    [2, `
+      CREATE TRIGGER transcript_segments_ai AFTER INSERT ON transcript_segments BEGIN
+        INSERT INTO transcript_fts(rowid, text) VALUES (new.rowid, new.text);
+      END;
+
+      CREATE TRIGGER transcript_segments_ad AFTER DELETE ON transcript_segments BEGIN
+        INSERT INTO transcript_fts(transcript_fts, rowid, text) VALUES ('delete', old.rowid, old.text);
+      END;
+
+      CREATE TRIGGER transcript_segments_au AFTER UPDATE ON transcript_segments BEGIN
+        INSERT INTO transcript_fts(transcript_fts, rowid, text) VALUES ('delete', old.rowid, old.text);
+        INSERT INTO transcript_fts(rowid, text) VALUES (new.rowid, new.text);
+      END;
+    `]
   ]
 
   for (const [version, sql] of migrations) {

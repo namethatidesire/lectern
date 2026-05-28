@@ -219,3 +219,54 @@ export function setSettings(settings: Partial<AppSettings>): void {
 export function getLectureFolderPath(lectureId: string): string {
   return path.resolve(lectureDir(lectureId))
 }
+
+export interface SearchResult {
+  lectureId: string
+  title: string
+  startedAt: number
+  snippet: string
+}
+
+export function searchTranscripts(query: string): SearchResult[] {
+  if (!query.trim()) return []
+  const db = getDb()
+  const seen = new Set<string>()
+  const results: SearchResult[] = []
+
+  // FTS full-text search across transcripts; one result row per lecture
+  try {
+    const ftsRows = db
+      .prepare(
+        `SELECT l.id AS lecture_id, l.title, l.started_at,
+                snippet(transcript_fts, 0, '[', ']', '...', 30) AS snippet
+         FROM transcript_fts
+         JOIN transcript_segments ts ON transcript_fts.rowid = ts.rowid
+         JOIN lectures l ON ts.lecture_id = l.id
+         WHERE transcript_fts MATCH ?
+         GROUP BY l.id
+         ORDER BY rank
+         LIMIT 50`
+      )
+      .all(query) as { lecture_id: string; title: string; started_at: number; snippet: string }[]
+
+    for (const r of ftsRows) {
+      seen.add(r.lecture_id)
+      results.push({ lectureId: r.lecture_id, title: r.title, startedAt: r.started_at, snippet: r.snippet })
+    }
+  } catch {
+    // FTS MATCH syntax errors throw; silently skip FTS results
+  }
+
+  // Also match lecture titles
+  const titleRows = db
+    .prepare(`SELECT id, title, started_at FROM lectures WHERE title LIKE ? LIMIT 20`)
+    .all(`%${query}%`) as { id: string; title: string; started_at: number }[]
+
+  for (const r of titleRows) {
+    if (!seen.has(r.id)) {
+      results.push({ lectureId: r.id, title: r.title, startedAt: r.started_at, snippet: '' })
+    }
+  }
+
+  return results
+}
