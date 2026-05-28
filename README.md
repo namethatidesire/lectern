@@ -87,5 +87,5 @@ All lecture data lives under the Electron `userData` path:
 |-------|--------|-------------|
 | 1 — Skeleton + capture | ✅ Done | Electron scaffold, SQLite store, mic audio → WAV, screen capture, snapshot hotkey, Recorder UI, Library UI |
 | 2 — Transcription + timeline | ✅ Done | Whisper subprocess (pre-built binary, first-run download), 30s live chunker, timeline view, audio playback with click-to-seek |
-| 3 — Snapshot intelligence + loopback | ⬜ Pending | WASAPI system audio, auto slide-change detection (dHash), interval dedupe |
+| 3 — Snapshot intelligence + loopback | ✅ Done | WASAPI system audio loopback via Electron desktopCapturer, mic+loopback Web Audio mixer, dHash auto slide-change detection (1s poll, Hamming distance threshold), phash deduplication discards duplicate slides |
 | 4 — Summarization + export | ⬜ Pending | Claude/Ollama note generation, Markdown export, FTS search |

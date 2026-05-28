@@ -94,9 +94,10 @@ const api = {
     lectureId: string,
     tMs: number,
     trigger: 'auto' | 'interval' | 'manual',
-    pngBase64: string
+    pngBase64: string,
+    dhash?: string
   ): void =>
-    ipcRenderer.send('snapshot:frame-data', { lectureId, tMs, trigger, pngBase64 }),
+    ipcRenderer.send('snapshot:frame-data', { lectureId, tMs, trigger, pngBase64, dhash }),
 
   // Main → Renderer event subscriptions
   onSnapshotAdded: (cb: (snap: Snapshot) => void) => {

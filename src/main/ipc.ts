@@ -72,13 +72,23 @@ export function registerIpcHandlers(win: BrowserWindow): void {
   // Renderer sends back PNG data after snapshot:request-frame
   ipcMain.on(
     'snapshot:frame-data',
-    (_e, { lectureId, tMs, trigger, pngBase64 }: {
-      lectureId: string
-      tMs: number
-      trigger: 'auto' | 'interval' | 'manual'
-      pngBase64: string
-    }) => {
-      saveSnapshotFrame(win, lectureId, tMs, trigger, pngBase64)
+    (
+      _e,
+      {
+        lectureId,
+        tMs,
+        trigger,
+        pngBase64,
+        dhash
+      }: {
+        lectureId: string
+        tMs: number
+        trigger: 'auto' | 'interval' | 'manual'
+        pngBase64: string
+        dhash?: string
+      }
+    ) => {
+      saveSnapshotFrame(win, lectureId, tMs, trigger, pngBase64, dhash)
     }
   )
 

@@ -12,6 +12,7 @@ import {
 import { IPC } from '@shared/ipc-contract'
 import type { RecordingConfig, Snapshot } from '@shared/types'
 import { chunker } from '../transcribe/chunker'
+import { isDuplicateSnapshot } from '../snapshot/detector'
 import fs from 'fs'
 
 export interface ActiveSession {
@@ -104,14 +105,17 @@ export function saveSnapshotFrame(
   lectureId: string,
   tMs: number,
   trigger: 'auto' | 'interval' | 'manual',
-  pngBase64: string
+  pngBase64: string,
+  dhash?: string
 ): void {
+  // Deduplicate: skip if this hash is too close to a recent snapshot
+  if (dhash && isDuplicateSnapshot(lectureId, dhash)) return
+
   const filename = snapshotFilename(tMs)
   const filePath = snapshotPath(lectureId, tMs)
-  const data = Buffer.from(pngBase64, 'base64')
-  fs.writeFileSync(filePath, data)
+  fs.writeFileSync(filePath, Buffer.from(pngBase64, 'base64'))
 
-  const snap: Snapshot = { lectureId, tMs, filename, trigger, phash: null }
+  const snap: Snapshot = { lectureId, tMs, filename, trigger, phash: dhash ?? null }
   insertSnapshot(snap)
   win.webContents.send(IPC.SNAPSHOT_ADDED, snap)
 }

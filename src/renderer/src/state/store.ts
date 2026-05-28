@@ -1,11 +1,13 @@
 import { create } from 'zustand'
-import type { Lecture, TranscriptSegment, Snapshot, Note } from '@shared/types'
+import type { Lecture, TranscriptSegment, Snapshot, Note, SnapshotMode } from '@shared/types'
 
 interface RecordingState {
   lectureId: string | null
   startedAt: number | null
   isRecording: boolean
   audioLevel: number
+  snapshotMode: SnapshotMode
+  sourceId: string | null
 }
 
 interface LectureViewState {
@@ -33,7 +35,9 @@ export const useAppStore = create<AppStore>((set) => ({
     lectureId: null,
     startedAt: null,
     isRecording: false,
-    audioLevel: 0
+    audioLevel: 0,
+    snapshotMode: 'manual',
+    sourceId: null
   },
   view: {
     lecture: null,
@@ -48,12 +52,7 @@ export const useAppStore = create<AppStore>((set) => ({
   setView: (v) =>
     set((s) => ({ view: { ...s.view, ...v } })),
   appendSegment: (seg) =>
-    set((s) => ({
-      view: {
-        ...s.view,
-        segments: [...s.view.segments, seg]
-      }
-    })),
+    set((s) => ({ view: { ...s.view, segments: [...s.view.segments, seg] } })),
   appendSnapshot: (snap) =>
     set((s) => ({
       view: {
@@ -62,19 +61,16 @@ export const useAppStore = create<AppStore>((set) => ({
       }
     })),
   appendNote: (note) =>
-    set((s) => ({
-      view: {
-        ...s.view,
-        notes: [...s.view.notes, note]
-      }
-    })),
+    set((s) => ({ view: { ...s.view, notes: [...s.view.notes, note] } })),
   reset: () =>
     set({
       recording: {
         lectureId: null,
         startedAt: null,
         isRecording: false,
-        audioLevel: 0
+        audioLevel: 0,
+        snapshotMode: 'manual',
+        sourceId: null
       }
     })
 }))

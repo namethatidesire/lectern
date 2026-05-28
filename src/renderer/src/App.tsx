@@ -6,10 +6,15 @@ import LecturePage from './routes/Lecture'
 import SettingsPage from './routes/Settings'
 import { useAppStore } from './state/store'
 import type { Snapshot, TranscriptSegment } from '@shared/types'
-import { getActiveCapture, setActiveCapture } from './lib/screen-capture-manager'
+import {
+  getActiveCapture,
+  setActiveCapture,
+  startAutoDetect,
+  stopAutoDetect
+} from './lib/screen-capture-manager'
 
 export default function App(): JSX.Element {
-  const { appendSnapshot, appendSegment, setRecording } = useAppStore()
+  const { appendSnapshot, appendSegment, setRecording, recording } = useAppStore()
 
   useEffect(() => {
     const unsubSnapshot = window.api.onSnapshotAdded((snap: Snapshot) => {
@@ -22,21 +27,21 @@ export default function App(): JSX.Element {
       setRecording({ audioLevel: rms })
     })
     const unsubStopped = window.api.onRecordingStopped(() => {
-      setRecording({ isRecording: false, lectureId: null })
+      stopAutoDetect()
       setActiveCapture(null)
+      setRecording({ isRecording: false, lectureId: null })
     })
     const unsubFrameReq = window.api.onSnapshotRequestFrame(
       async ({ lectureId, tMs, trigger }) => {
         const sc = getActiveCapture()
         if (!sc) return
-        const pngBase64 = await sc.captureFrame()
-        if (pngBase64) {
-          window.api.sendSnapshotFrame(lectureId, tMs, trigger, pngBase64)
-        }
+        const result = await sc.captureFrameWithHash()
+        if (!result) return
+        window.api.sendSnapshotFrame(lectureId, tMs, trigger, result.pngBase64, result.dhash)
       }
     )
 
-    return () => {
+    return (): void => {
       unsubSnapshot()
       unsubTranscript()
       unsubLevel()
@@ -44,6 +49,26 @@ export default function App(): JSX.Element {
       unsubFrameReq()
     }
   }, [])
+
+  // Start auto-detector when recording with auto/all mode
+  useEffect(() => {
+    if (!recording.isRecording) {
+      stopAutoDetect()
+      return
+    }
+    const { snapshotMode, lectureId, startedAt } = recording
+    if (snapshotMode !== 'auto' && snapshotMode !== 'all') return
+    if (!lectureId || !startedAt) return
+
+    window.api.getSettings().then((settings) => {
+      startAutoDetect(settings.autoDetectThreshold, 1000, (pngBase64, dhash) => {
+        const tMs = Date.now() - startedAt
+        window.api.sendSnapshotFrame(lectureId, tMs, 'auto', pngBase64, dhash)
+      })
+    })
+
+    return (): void => { stopAutoDetect() }
+  }, [recording.isRecording, recording.snapshotMode])
 
   return (
     <HashRouter>

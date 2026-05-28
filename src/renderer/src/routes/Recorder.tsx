@@ -62,10 +62,10 @@ export default function RecorderPage(): JSX.Element {
 
     audioCap.current = new AudioCapture()
     try {
-      await audioCap.current.start(null)
+      await audioCap.current.start(audioSource, selectedSource.id)
     } catch (err) {
       sc.stop()
-      alert(`Microphone access failed: ${(err as Error).message}`)
+      alert(`Audio capture failed: ${(err as Error).message}`)
       return
     }
 
@@ -78,7 +78,7 @@ export default function RecorderPage(): JSX.Element {
     }
 
     const { lectureId, startedAt } = await window.api.startRecording(config)
-    setRecording({ lectureId, startedAt, isRecording: true })
+    setRecording({ lectureId, startedAt, isRecording: true, snapshotMode, sourceId: selectedSource.id })
   }
 
   async function handleStop(): Promise<void> {
